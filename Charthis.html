@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Charthis — Quant Trading Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; background: #0A0B0D; }
+  * { box-sizing: border-box; }
+  ::selection { background: #FFB547; color: #0A0B0D; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #0A0B0D; }
+  ::-webkit-scrollbar-thumb { background: #2A323C; }
+  ::-webkit-scrollbar-thumb:hover { background: #FFB547; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="charthis-atoms.jsx"></script>
+<script type="text/babel" src="charthis-live.jsx"></script>
+<script type="text/babel" src="charthis-dashboard.jsx"></script>
+<script type="text/babel" src="charthis-tabs-1.jsx"></script>
+<script type="text/babel" src="charthis-tabs-2.jsx"></script>
+<script type="text/babel" src="charthis-ai.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "showTicker": true,
+  "theme": "dark",
+  "accent": "amber"
+}/*EDITMODE-END*/;
+
+// ── Error Boundary — catches render errors per tab ──
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  componentDidCatch(e, info) { console.error('[Charthis] Tab render error:', e, info); }
+  render() {
+    if (this.state.error) {
+      const CT = this.props.CT || { bg:'#0A0B0D', amber:'#FFB547', dim:'#4A5A6A', border:'#1C2329', textHi:'#EAEFF4' };
+      return (
+        <div style={{ padding: 48, textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>
+          <div style={{ fontSize: 28, color: CT.amber, marginBottom: 16 }}>⚠</div>
+          <div style={{ fontSize: 11, color: CT.dim, marginBottom: 8 }}>// RENDER ERROR</div>
+          <div style={{ fontSize: 12, color: CT.textHi, marginBottom: 8 }}>{this.state.error?.message || 'Unknown error'}</div>
+          <button onClick={() => this.setState({ error: null })} style={{ marginTop: 16, background: 'transparent', border: `1px solid ${CT.amber}`, color: CT.amber, padding: '8px 20px', fontFamily: 'inherit', fontSize: 10, cursor: 'pointer', letterSpacing: '0.1em' }}>RETRY ▸</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const TABS = [
+  { k: 'home',      label: 'HOME',      code: '01' },
+  { k: 'agents',    label: 'AGENTS',    code: '02' },
+  { k: 'indicators',label: 'INDICATORS',code: '03' },
+  { k: 'analysis',  label: 'ANALYSIS',  code: '04' },
+  { k: 'pricing',   label: 'PRICING',   code: '05' },
+  { k: 'about',     label: 'ABOUT',     code: '06' },
+  { k: 'contact',   label: 'CONTACT',   code: '07' },
+  { k: 'dashboard', label: 'DASHBOARD', code: '★'  },
+];
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const live = useLiveData();
+  const auth = useAuth();
+  const [authOpen, setAuthOpen] = React.useState(false);
+  const [authMode, setAuthMode] = React.useState('signin');
+  const [tab, setTab] = React.useState(() => {
+    const h = window.location.hash.replace('#', '');
+    if (h === 'dashboard') return 'home'; // require login first
+    return TABS.find(x => x.k === h) ? h : 'home';
+  });
+  const scrollerRef = React.useRef(null);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  const openAuth = (mode) => { setAuthMode(mode); setAuthOpen(true); };
+  const goDashboard = () => {
+    if (auth.user) setDrawerOpen(true);
+    else openAuth('signin');
+  };
+
+  // sync hash
+  React.useEffect(() => {
+    window.location.hash = tab;
+    if (scrollerRef.current) scrollerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [tab]);
+
+  React.useEffect(() => {
+    const onHash = () => {
+      const h = window.location.hash.replace('#', '');
+      if (TABS.find(x => x.k === h)) setTab(h);
+      else if (TABS.find(x => x.k === h)) setTab(h);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const theme = THEMES[t.theme] || THEMES.dark;
+  // accent override
+  const themed = React.useMemo(() => {
+    const accents = { amber: { amber: '#FFB547', amberHi: '#FFC872' }, cyan: { amber: '#5BD3F0', amberHi: '#7CDFF5' }, green: { amber: '#00E5A0', amberHi: '#33EBB6' }, magenta: { amber: '#FF6BB5', amberHi: '#FF8FC8' } };
+    const a = accents[t.accent] || accents.amber;
+    return { ...theme, ...(t.theme === 'dark' ? a : { amber: t.theme === 'light' ? '#B45309' : a.amber, amberHi: t.theme === 'light' ? '#92400E' : a.amberHi }) };
+  }, [theme, t.accent, t.theme]);
+
+  const go = (k) => {
+    if (k === 'dashboard' && !auth.user) {
+      openAuth('signin');
+      return;
+    }
+    setTab(k);
+  };
+  const cur = TABS.find(x => x.k === tab) || { code: '08', label: 'DASHBOARD' };
+
+  return (
+    <ThemeContext.Provider value={themed}>
+      <div style={{ background: themed.bg, minHeight: '100vh', color: themed.text }}>
+        {/* TOP BAR */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 100, background: themed.bg, borderBottom: `1px solid ${themed.border}` }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr auto', alignItems: 'center', padding: '14px 24px', borderBottom: `1px solid ${themed.border}` }}>
+            <CLogo size={14} />
+            <nav style={{ display: 'flex', justifyContent: 'center', gap: 0 }}>
+              {TABS.map((x) => (
+                <button key={x.k} onClick={() => go(x.k)} style={{
+                  background: 'transparent',
+                  color: tab === x.k ? themed.amber : themed.dim,
+                  border: 'none',
+                  borderBottom: `2px solid ${tab === x.k ? themed.amber : 'transparent'}`,
+                  padding: '8px 16px',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}>
+                  <span style={{ fontSize: 9, color: tab === x.k ? themed.amber : themed.dim, opacity: 0.7 }}>{x.code}</span>
+                  {x.label}
+                </button>
+              ))}
+            </nav>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 10, color: themed.dim }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 3, background: live.status === 'live' ? themed.green : themed.dim, boxShadow: live.status === 'live' ? `0 0 8px ${themed.green}` : 'none' }} />
+                {live.status === 'live' ? 'LIVE' : live.status === 'loading' ? 'SYNC' : 'OFFLINE'}
+              </span>
+              {auth.user ? (
+                <AccountChip user={auth.user} onSignOut={auth.signOut} onOpenDashboard={() => setDrawerOpen(true)} onGoToDashboard={() => go('dashboard')} />
+              ) : (
+                <>
+                  <button onClick={() => openAuth('signin')} style={{ background: 'transparent', color: themed.text, border: `1px solid ${themed.border}`, padding: '7px 12px', fontFamily: 'inherit', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', cursor: 'pointer' }}>SIGN IN</button>
+                  <button onClick={() => openAuth('signup')} style={{ background: themed.amber, color: themed.bg, border: 'none', padding: '8px 14px', fontFamily: 'inherit', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', cursor: 'pointer' }}>GET STARTED ▸</button>
+                </>
+              )}
+            </div>
+          </div>
+          {/* breadcrumb strip */}
+          <div style={{ padding: '6px 24px', fontSize: 9, color: themed.dim, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.1em', background: themed.bg2, display: 'flex', justifyContent: 'space-between' }}>
+            <span>CHARTHIS / <span style={{ color: themed.amber }}>{cur.code} · {cur.label}</span></span>
+            <span>SYSTEM.STATUS · <span style={{ color: themed.green }}>NOMINAL</span> · 17 NODES · LATENCY 14MS</span>
+          </div>
+        </div>
+
+        {t.showTicker && <CTickerLive data={live.data} status={live.status} />}
+
+        {/* MAIN */}
+        <div ref={scrollerRef}>
+          <ErrorBoundary CT={themed}>
+            {tab === 'home' && <TabHome go={go} live={live} />}
+            {tab === 'dashboard' && (
+              auth.user
+                ? (auth.user.isAdmin
+                    ? <TabAdminPage user={auth.user} onSettings={() => setDrawerOpen(true)} />
+                    : <TabDashboard user={auth.user} live={live} go={go} onSettings={() => setDrawerOpen(true)} />
+                  )
+                : <DashboardGate onSignIn={() => openAuth('signin')} onSignUp={() => openAuth('signup')} />
+            )}
+            {tab === 'agents' && <TabAgents go={go} />}
+            {tab === 'indicators' && <TabIndicators go={go} />}
+            {tab === 'analysis' && <ErrorBoundary CT={themed}><TabAnalysis live={live} /></ErrorBoundary>}
+            {tab === 'pricing' && <TabPricing go={go} />}
+            {tab === 'about' && <TabAbout />}
+            {tab === 'contact' && <TabContact />}
+          </ErrorBoundary>
+        </div>
+
+        {/* DRAWER — user dashboard or admin panel */}
+        <CDashboardDrawer
+          open={drawerOpen}
+          user={auth.user}
+          data={live.data}
+          onClose={() => setDrawerOpen(false)}
+          onSignOut={() => { auth.signOut(); setDrawerOpen(false); }}
+        />
+
+        {/* FOOTER */}
+        <div style={{ borderTop: `1px solid ${themed.border}`, padding: '32px 24px', background: themed.bg2 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr', gap: 32, marginBottom: 28 }}>
+            <div>
+              <CLogo size={13} />
+              <div style={{ fontSize: 10, color: themed.dim, marginTop: 12, lineHeight: 1.7, maxWidth: 320 }}>
+                Custom AI trading agents and quantitative indicators. Built for traders who care about edge that survives the close.
+              </div>
+            </div>
+            {[
+              { h: 'PRODUCT', items: [['Agents', 'agents'], ['Indicators', 'indicators'], ['Analysis', 'analysis'], ['Pricing', 'pricing']] },
+              { h: 'COMPANY', items: [['About', 'about'], ['Contact', 'contact']] },
+              { h: 'LEGAL', items: [['Terms', null], ['Privacy', null], ['Disclaimer', null]] },
+              { h: 'SOCIAL', items: [['Telegram', null], ['X / Twitter', null], ['Discord', null], ['GitHub', null]] },
+            ].map((c) => (
+              <div key={c.h}>
+                <div style={{ fontSize: 9, color: themed.amber, letterSpacing: '0.15em', marginBottom: 12 }}>// {c.h}</div>
+                {c.items.map(([l, k]) => (
+                  <div key={l} onClick={() => k && go(k)} style={{ fontSize: 11, color: themed.text, padding: '4px 0', cursor: k ? 'pointer' : 'default', opacity: k ? 1 : 0.7 }}>{l}</div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop: `1px solid ${themed.border}`, paddingTop: 18, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: themed.dim }}>
+            <span>© 2026 CHARTHIS. ALL RIGHTS RESERVED. TRADE AT YOUR OWN RISK.</span>
+            <span>BUILD 2026.04.30 · COMMIT a1f9c2e</span>
+          </div>
+        </div>
+      </div>
+
+      <AuthModal open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} auth={auth} />
+      <ChirpAssistant />
+
+      <TweaksPanel title="Charthis · Tweaks">
+        <TweakSection label="Display">
+          <TweakRadio
+            label="Theme"
+            value={t.theme}
+            onChange={(v) => setTweak('theme', v)}
+            options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }]}
+          />
+          <TweakSelect
+            label="Accent color"
+            value={t.accent}
+            onChange={(v) => setTweak('accent', v)}
+            options={[
+              { value: 'amber', label: 'Amber (Phosphor)' },
+              { value: 'cyan', label: 'Cyan' },
+              { value: 'green', label: 'Green (Terminal)' },
+              { value: 'magenta', label: 'Magenta' },
+            ]}
+          />
+          <TweakToggle label="Show live ticker" value={t.showTicker} onChange={(v) => setTweak('showTicker', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </ThemeContext.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

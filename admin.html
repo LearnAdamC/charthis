@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CHARTHIS</title>
+<meta name="robots" content="noindex,nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0A0B0D;--bg2:#0E1115;--bg3:#141820;--bg4:#1C2329;
+  --text:#C8D6E0;--hi:#EAEFF4;--dim:#4A5A6A;
+  --border:#1C2329;--bhi:#2A3540;
+  --amber:#FFB547;--green:#00E5A0;--red:#FF3D7F;--cyan:#5BD3F0;
+  --mono:'JetBrains Mono',monospace;--sans:'Space Grotesk',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;min-height:100vh}
+
+/* ── LOCK ── */
+#lock{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}
+.lock-wrap{border:1px solid var(--border);padding:52px 44px;width:380px;text-align:center;background:var(--bg2)}
+.lock-icon{font-size:28px;color:var(--amber);margin-bottom:20px;letter-spacing:.1em}
+.lock-title{font-family:var(--sans);font-size:20px;font-weight:700;color:var(--hi);margin-bottom:4px}
+.lock-sub{font-size:9px;color:var(--dim);letter-spacing:.18em;margin-bottom:32px}
+.lock-label{display:block;font-size:9px;color:var(--dim);letter-spacing:.15em;margin-bottom:6px;text-align:left}
+.lock-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--hi);padding:12px 14px;font-family:var(--mono);font-size:13px;outline:none;letter-spacing:.08em;transition:border .2s}
+.lock-input:focus{border-color:var(--amber)}
+.lock-btn{display:block;width:100%;margin-top:12px;padding:13px;background:var(--amber);color:var(--bg);border:none;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.14em;cursor:pointer;transition:opacity .15s}
+.lock-btn:hover{opacity:.88}
+.lock-err{color:var(--red);font-size:10px;margin-top:10px;min-height:16px;letter-spacing:.05em}
+.attempts-warn{color:var(--amber);font-size:9px;margin-top:6px;letter-spacing:.05em;min-height:14px}
+
+/* ── APP (injected after login) ── */
+.topbar{height:48px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:14px;background:var(--bg2);position:sticky;top:0;z-index:100}
+.logo{font-family:var(--sans);font-size:14px;font-weight:700;color:var(--hi)}
+.logo span{color:var(--amber)}
+.badge{font-size:9px;color:var(--amber);border:1px solid var(--amber);padding:2px 8px;letter-spacing:.15em}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 24px;background:var(--bg2);overflow-x:auto}
+.tab{padding:12px 20px;font-size:10px;letter-spacing:.12em;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0}
+.tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+.section{display:none;padding:28px 24px;max-width:1200px}
+.section.active{display:block}
+h2{font-family:var(--sans);font-size:18px;color:var(--hi);margin-bottom:4px}
+.sub-lbl{font-size:10px;color:var(--dim);letter-spacing:.1em;margin-bottom:24px}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:flex-end}
+label{display:block;font-size:9px;color:var(--dim);letter-spacing:.15em;margin-bottom:5px}
+select,input.inp{background:var(--bg2);border:1px solid var(--border);color:var(--hi);padding:10px 12px;font-family:var(--mono);font-size:11px;outline:none;cursor:pointer}
+select:focus,input.inp:focus{border-color:var(--amber)}
+.btn{display:inline-block;padding:11px 24px;background:var(--amber);color:var(--bg);border:none;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--amber);color:var(--amber)}
+.btn-red{background:var(--red);color:#fff}
+.card{border:1px solid var(--border);background:var(--bg2);padding:20px;margin-bottom:14px}
+.tier-badge{font-size:9px;padding:3px 8px;font-weight:700;letter-spacing:.1em}
+.tier-STARTER{background:rgba(255,181,71,.1);color:var(--amber);border:1px solid var(--amber)}
+.tier-PRO{background:rgba(0,229,160,.1);color:var(--green);border:1px solid var(--green)}
+.tier-DESK{background:rgba(91,211,240,.1);color:var(--cyan);border:1px solid var(--cyan)}
+.code-txt{font-size:13px;color:var(--hi);letter-spacing:.08em;font-weight:500}
+.s-used{color:var(--red);font-size:9px}
+.s-free{color:var(--green);font-size:9px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:9px;color:var(--dim);letter-spacing:.12em;padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;font-size:11px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:hover td{background:var(--bg3)}
+.cb{background:transparent;border:1px solid var(--border);color:var(--dim);padding:3px 8px;font-family:var(--mono);font-size:9px;cursor:pointer}
+.cb:hover{border-color:var(--amber);color:var(--amber)}
+.db{background:transparent;border:none;color:var(--dim);padding:3px 6px;font-family:var(--mono);font-size:11px;cursor:pointer}
+.db:hover{color:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.stat{border:1px solid var(--border);padding:18px;background:var(--bg2)}
+.stat-val{font-family:var(--sans);font-size:30px;font-weight:700;color:var(--hi)}
+.stat-lbl{font-size:9px;color:var(--dim);letter-spacing:.12em;margin-top:4px}
+.empty{padding:32px;text-align:center;color:var(--dim);font-size:11px;border:1px dashed var(--border)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--bhi);padding:10px 18px;font-size:11px;color:var(--hi);opacity:0;transition:all .25s;pointer-events:none;z-index:9999;transform:translateY(6px)}
+.toast.show{opacity:1;transform:translateY(0)}
+#search-codes,#search-users{background:var(--bg2);border:1px solid var(--border);color:var(--hi);padding:9px 14px;font-family:var(--mono);font-size:11px;outline:none;width:240px}
+#search-codes:focus,#search-users:focus{border-color:var(--amber)}
+</style>
+</head>
+<body>
+
+<!-- ══ LOCK SCREEN — only this exists in the DOM before login ══ -->
+<div id="lock">
+  <div class="lock-wrap">
+    <div class="lock-icon">⌗ ADMIN</div>
+    <div class="lock-title">CHARTHIS</div>
+    <div class="lock-sub">SUBSCRIPTION MANAGEMENT · RESTRICTED ACCESS</div>
+    <label class="lock-label">PASSWORD</label>
+    <input class="lock-input" type="password" id="pw" placeholder="Enter admin password…"
+      onkeydown="if(event.key==='Enter')tryLogin()" autocomplete="off">
+    <button class="lock-btn" onclick="tryLogin()">UNLOCK ▸</button>
+    <div class="lock-err" id="lock-err"></div>
+    <div class="attempts-warn" id="lock-warn"></div>
+  </div>
+</div>
+
+<!-- ══ APP CONTAINER — empty until login succeeds ══ -->
+<div id="app"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── CONFIG ─── */
+const SUBS_KEY  = 'charthis_codes';
+const USERS_KEY = 'charthis_users';
+const PW_KEY    = 'charthis_admin_pw';
+const SESSION_KEY = 'charthis_admin_session';
+const DEFAULT_PW  = 'admin1234';
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS   = 5 * 60 * 1000; // 5 min lockout
+
+/* ─── STORAGE HELPERS ─── */
+const getDB  = k => { try{ return JSON.parse(localStorage.getItem(k)||'{}') }catch{ return {} } };
+const setDB  = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+
+/* ─── AUTH STATE ─── */
+let _authed = false;
+
+function getAttemptData() {
+  try { return JSON.parse(sessionStorage.getItem('_adm_att')||'{"count":0,"lockedUntil":0}'); }
+  catch { return {count:0,lockedUntil:0}; }
+}
+function setAttemptData(d) { sessionStorage.setItem('_adm_att', JSON.stringify(d)); }
+
+function tryLogin() {
+  const att = getAttemptData();
+  const now = Date.now();
+
+  if (att.lockedUntil > now) {
+    const remaining = Math.ceil((att.lockedUntil - now) / 1000);
+    document.getElementById('lock-err').textContent = `Too many attempts. Wait ${remaining}s.`;
+    return;
+  }
+
+  const entered = document.getElementById('pw').value;
+  const correct = localStorage.getItem(PW_KEY) || DEFAULT_PW;
+
+  if (entered === correct) {
+    // SUCCESS
+    setAttemptData({count:0,lockedUntil:0});
+    sessionStorage.setItem(SESSION_KEY, btoa(Date.now() + ':ok'));
+    _authed = true;
+    document.getElementById('lock').style.display = 'none';
+    buildApp();
+    startAutoRefresh();
+  } else {
+    // FAIL
+    att.count++;
+    const remaining = MAX_ATTEMPTS - att.count;
+    if (att.count >= MAX_ATTEMPTS) {
+      att.lockedUntil = Date.now() + LOCKOUT_MS;
+      att.count = 0;
+      setAttemptData(att);
+      document.getElementById('lock-err').textContent = 'Too many attempts. Locked for 5 minutes.';
+      document.getElementById('pw').value = '';
+      startLockoutCountdown();
+    } else {
+      setAttemptData(att);
+      document.getElementById('lock-err').textContent = 'Incorrect password.';
+      document.getElementById('lock-warn').textContent = `${remaining} attempt${remaining!==1?'s':''} remaining before lockout.`;
+      document.getElementById('pw').value = '';
+    }
+  }
+}
+
+function startLockoutCountdown() {
+  const interval = setInterval(() => {
+    const att = getAttemptData();
+    const rem = Math.ceil((att.lockedUntil - Date.now()) / 1000);
+    if (rem <= 0) {
+      clearInterval(interval);
+      document.getElementById('lock-err').textContent = '';
+      document.getElementById('lock-warn').textContent = '';
+    } else {
+      document.getElementById('lock-err').textContent = `Too many attempts. Wait ${rem}s.`;
+    }
+  }, 1000);
+}
+
+function lock() {
+  _authed = false;
+  sessionStorage.removeItem(SESSION_KEY);
+  document.getElementById('app').innerHTML = '';
+  document.getElementById('lock').style.display = 'flex';
+  document.getElementById('pw').value = '';
+  document.getElementById('lock-err').textContent = '';
+}
+
+/* ─── BUILD APP (only called after successful login) ─── */
+function buildApp() {
+  document.getElementById('app').innerHTML = `
+    <div class="topbar">
+      <span class="logo">CHARTHIS<span>.</span></span>
+      <span class="badge">ADMIN</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--dim)" id="clock"></span>
+      <button class="btn btn-ghost" style="padding:7px 14px;font-size:9px;margin:0" onclick="lock()">LOCK SESSION</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('dashboard')">01 · DASHBOARD</div>
+      <div class="tab" onclick="switchTab('generate')">02 · GENERATE</div>
+      <div class="tab" onclick="switchTab('codes')">03 · ALL CODES</div>
+      <div class="tab" onclick="switchTab('users')">04 · USERS</div>
+      <div class="tab" onclick="switchTab('settings')">05 · SETTINGS</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="tab-dashboard">
+      <h2>Dashboard</h2>
+      <div class="sub-lbl">LIVE OVERVIEW · AUTO-REFRESH 5s</div>
+      <div class="stats" id="stats-grid"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <div style="font-size:10px;color:var(--amber);letter-spacing:.15em;margin-bottom:12px">RECENT REGISTRATIONS</div>
+          <div id="recent-users"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--amber);letter-spacing:.15em;margin-bottom:12px">CODE USAGE BY TIER</div>
+          <div id="tier-breakdown"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GENERATE -->
+    <div class="section" id="tab-generate">
+      <h2>Generate Codes</h2>
+      <div class="sub-lbl">CREATE SUBSCRIPTION CODES · 1 CODE = 1 USER</div>
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>TIER</label>
+            <select id="gen-tier">
+              <option value="STARTER">STARTER — $79/mo</option>
+              <option value="PRO" selected>PRO — $249/mo</option>
+              <option value="DESK">DESK — $599/mo</option>
+            </select>
+          </div>
+          <div>
+            <label>QTY (max 50)</label>
+            <input type="number" id="gen-qty" class="inp" value="1" min="1" max="50" style="width:90px">
+          </div>
+          <div>
+            <label>NOTE (optional)</label>
+            <input type="text" id="gen-note" class="inp" placeholder="e.g. batch jan 2026" style="width:220px">
+          </div>
+          <button class="btn" onclick="generateCodes()">GENERATE ▸</button>
+        </div>
+      </div>
+      <div id="gen-result"></div>
+    </div>
+
+    <!-- ALL CODES -->
+    <div class="section" id="tab-codes">
+      <h2>All Codes</h2>
+      <div class="sub-lbl">MANAGE SUBSCRIPTION CODES</div>
+      <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
+        <input id="search-codes" placeholder="Search code, email, note…" oninput="renderCodes()">
+        <select id="f-tier" onchange="renderCodes()" style="background:var(--bg2);border:1px solid var(--border);color:var(--hi);padding:9px 12px;font-family:var(--mono);font-size:11px;outline:none">
+          <option value="">ALL TIERS</option><option>STARTER</option><option>PRO</option><option>DESK</option>
+        </select>
+        <select id="f-stat" onchange="renderCodes()" style="background:var(--bg2);border:1px solid var(--border);color:var(--hi);padding:9px 12px;font-family:var(--mono);font-size:11px;outline:none">
+          <option value="">ALL STATUS</option><option value="free">UNUSED</option><option value="used">USED</option>
+        </select>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-ghost" style="padding:8px 12px;font-size:9px" onclick="exportJSON('codes')">EXPORT JSON</button>
+          <button class="btn btn-ghost" style="padding:8px 12px;font-size:9px" onclick="exportCSV()">EXPORT CSV</button>
+        </div>
+      </div>
+      <div id="codes-table"></div>
+    </div>
+
+    <!-- USERS -->
+    <div class="section" id="tab-users">
+      <h2>Registered Users</h2>
+      <div class="sub-lbl">USERS WHO REGISTERED WITH A VALID CODE</div>
+      <div style="display:flex;gap:10px;margin-bottom:18px;align-items:center">
+        <input id="search-users" placeholder="Search name, email, tier…" oninput="renderUsers()">
+        <div style="margin-left:auto">
+          <button class="btn btn-ghost" style="padding:8px 12px;font-size:9px" onclick="exportJSON('users')">EXPORT JSON</button>
+        </div>
+      </div>
+      <div id="users-table"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="section" id="tab-settings">
+      <h2>Settings</h2>
+      <div class="sub-lbl">ADMIN CONFIGURATION</div>
+      <div class="card" style="max-width:440px">
+        <div style="font-size:10px;color:var(--amber);letter-spacing:.15em;margin-bottom:16px">CHANGE PASSWORD</div>
+        <label>CURRENT PASSWORD</label>
+        <input type="password" id="pw-cur" class="inp" style="width:100%;margin-bottom:10px">
+        <label>NEW PASSWORD</label>
+        <input type="password" id="pw-new" class="inp" style="width:100%;margin-bottom:10px">
+        <label>CONFIRM NEW PASSWORD</label>
+        <input type="password" id="pw-con" class="inp" style="width:100%;margin-bottom:14px">
+        <button class="btn" onclick="changePassword()">UPDATE PASSWORD ▸</button>
+        <div id="pw-msg" style="font-size:10px;margin-top:10px;min-height:16px"></div>
+      </div>
+      <div class="card" style="max-width:440px;margin-top:16px">
+        <div style="font-size:10px;color:var(--red);letter-spacing:.15em;margin-bottom:16px">DANGER ZONE</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost" style="font-size:10px" onclick="clearUsed()">RESET USED FLAGS</button>
+          <button class="btn btn-red" style="font-size:10px" onclick="nukeAll()">WIPE ALL DATA</button>
+        </div>
+      </div>
+    </div>
+  `;
+  renderDashboard();
+}
+
+/* ─── TABS ─── */
+function switchTab(id) {
+  if (!_authed) return;
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active', ['dashboard','generate','codes','users','settings'][i]===id);
+  });
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='codes')     renderCodes();
+  if(id==='users')     renderUsers();
+  if(id==='dashboard') renderDashboard();
+}
+
+/* ─── GENERATE ─── */
+function genCode(tier) {
+  const ch = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let p=''; for(let i=0;i<8;i++) p+=ch[Math.floor(Math.random()*ch.length)];
+  return `CHARTHIS-${tier.slice(0,3)}-${p}`;
+}
+function generateCodes() {
+  if(!_authed) return;
+  const tier = document.getElementById('gen-tier').value;
+  const qty  = Math.min(50, Math.max(1, +document.getElementById('gen-qty').value||1));
+  const note = document.getElementById('gen-note').value.trim();
+  const db   = getDB(SUBS_KEY);
+  const now  = new Date().toISOString();
+  const newCodes = [];
+  for(let i=0;i<qty;i++){
+    let code; do{ code=genCode(tier); }while(db[code]);
+    db[code]={tier,used:false,createdAt:now,note:note||null};
+    newCodes.push(code);
+  }
+  setDB(SUBS_KEY,db);
+  toast(`Generated ${qty} code${qty>1?'s':''} · ${tier}`);
+  document.getElementById('gen-result').innerHTML=`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div><span class="tier-badge tier-${tier}">${tier}</span><span style="font-size:10px;color:var(--dim);margin-left:10px">${qty} code${qty>1?'s':''}</span></div>
+        <button class="cb" onclick="copyAll(${JSON.stringify(newCodes)})">COPY ALL</button>
+      </div>
+      ${newCodes.map(c=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+          <span class="code-txt">${c}</span>
+          <button class="cb" onclick="copyCode('${c}')">COPY</button>
+        </div>`).join('')}
+    </div>`;
+}
+function copyCode(c){ navigator.clipboard.writeText(c).then(()=>toast('Copied: '+c)); }
+function copyAll(arr){ navigator.clipboard.writeText(arr.join('\n')).then(()=>toast('Copied '+arr.length+' codes')); }
+
+/* ─── RENDER CODES ─── */
+function renderCodes() {
+  if(!_authed) return;
+  const db     = getDB(SUBS_KEY);
+  const search = (document.getElementById('search-codes')?.value||'').toLowerCase();
+  const fTier  = document.getElementById('f-tier')?.value||'';
+  const fStat  = document.getElementById('f-stat')?.value||'';
+  let entries  = Object.entries(db).map(([code,v])=>({code,...v}));
+  if(fTier) entries=entries.filter(e=>e.tier===fTier);
+  if(fStat==='free') entries=entries.filter(e=>!e.used);
+  if(fStat==='used') entries=entries.filter(e=>e.used);
+  if(search) entries=entries.filter(e=>
+    e.code.toLowerCase().includes(search)||(e.tier||'').toLowerCase().includes(search)||
+    (e.usedBy||'').toLowerCase().includes(search)||(e.note||'').toLowerCase().includes(search));
+  entries.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const el=document.getElementById('codes-table');
+  if(!entries.length){el.innerHTML=`<div class="empty">No codes found.</div>`;return;}
+  el.innerHTML=`
+    <table><thead><tr>
+      <th>CODE</th><th>TIER</th><th>STATUS</th><th>USED BY</th><th>CREATED</th><th>NOTE</th><th></th>
+    </tr></thead><tbody>
+    ${entries.map(e=>`<tr>
+      <td><span class="code-txt" style="font-size:12px">${e.code}</span></td>
+      <td><span class="tier-badge tier-${e.tier}">${e.tier}</span></td>
+      <td><span class="${e.used?'s-used':'s-free'}">${e.used?'● USED':'○ FREE'}</span></td>
+      <td style="color:var(--dim)">${e.usedBy||'—'}</td>
+      <td style="color:var(--dim);font-size:10px">${e.createdAt?e.createdAt.slice(0,10):'—'}</td>
+      <td style="color:var(--dim);font-size:10px">${e.note||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="cb" onclick="copyCode('${e.code}')">COPY</button>
+        <button class="db" onclick="deleteCode('${e.code}')" title="Delete">✕</button>
+      </td>
+    </tr>`).join('')}
+    </tbody></table>
+    <div style="font-size:10px;color:var(--dim);margin-top:12px;text-align:right">${entries.length} result${entries.length!==1?'s':''}</div>`;
+}
+function deleteCode(code){
+  if(!_authed) return;
+  if(!confirm(`Delete code ${code}?`)) return;
+  const db=getDB(SUBS_KEY); delete db[code]; setDB(SUBS_KEY,db);
+  renderCodes(); toast('Deleted: '+code);
+}
+
+/* ─── RENDER USERS ─── */
+function renderUsers() {
+  if(!_authed) return;
+  const db=getDB(USERS_KEY);
+  const search=(document.getElementById('search-users')?.value||'').toLowerCase();
+  let entries=Object.values(db);
+  if(search) entries=entries.filter(e=>
+    (e.name||'').toLowerCase().includes(search)||(e.email||'').toLowerCase().includes(search)||
+    (e.tier||'').toLowerCase().includes(search));
+  entries.sort((a,b)=>new Date(b.registeredAt)-new Date(a.registeredAt));
+  const el=document.getElementById('users-table');
+  if(!entries.length){el.innerHTML=`<div class="empty">No registered users yet.</div>`;return;}
+  el.innerHTML=`
+    <table><thead><tr>
+      <th>NAME</th><th>EMAIL</th><th>TIER</th><th>CODE</th><th>REGISTERED AT</th><th></th>
+    </tr></thead><tbody>
+    ${entries.map(u=>`<tr>
+      <td style="color:var(--hi)">${u.name||'—'}</td>
+      <td>${u.email||'—'}</td>
+      <td><span class="tier-badge tier-${u.tier||'STARTER'}">${u.tier||'—'}</span></td>
+      <td style="font-size:10px;color:var(--dim)">${u.code||'—'}</td>
+      <td style="color:var(--dim);font-size:10px">${u.registeredAt?new Date(u.registeredAt).toLocaleString():'—'}</td>
+      <td><button class="db" onclick="deleteUser('${u.email}')">✕</button></td>
+    </tr>`).join('')}
+    </tbody></table>
+    <div style="font-size:10px;color:var(--dim);margin-top:12px;text-align:right">${entries.length} user${entries.length!==1?'s':''}</div>`;
+}
+function deleteUser(email){
+  if(!_authed) return;
+  if(!confirm(`Remove user ${email}?`)) return;
+  const db=getDB(USERS_KEY); delete db[email.toLowerCase()]; setDB(USERS_KEY,db);
+  renderUsers(); toast('Removed: '+email);
+}
+
+/* ─── DASHBOARD ─── */
+function renderDashboard() {
+  if(!_authed) return;
+  const codes=getDB(SUBS_KEY), users=getDB(USERS_KEY);
+  const all=Object.values(codes), allU=Object.values(users);
+  const used=all.filter(c=>c.used), free=all.filter(c=>!c.used);
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat"><div class="stat-val">${all.length}</div><div class="stat-lbl">TOTAL CODES</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--green)">${free.length}</div><div class="stat-lbl">UNUSED</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--red)">${used.length}</div><div class="stat-lbl">USED</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--amber)">${allU.length}</div><div class="stat-lbl">REGISTERED USERS</div></div>`;
+  const recent=allU.sort((a,b)=>new Date(b.registeredAt)-new Date(a.registeredAt)).slice(0,6);
+  document.getElementById('recent-users').innerHTML=recent.length
+    ?recent.map(u=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div><div style="color:var(--hi);font-size:11px">${u.name}</div><div style="color:var(--dim);font-size:9px">${u.email}</div></div>
+        <span class="tier-badge tier-${u.tier}">${u.tier}</span></div>`).join('')
+    :`<div class="empty" style="padding:16px">No users yet.</div>`;
+  const tiers=['STARTER','PRO','DESK'];
+  document.getElementById('tier-breakdown').innerHTML=tiers.map(tier=>{
+    const tot=all.filter(c=>c.tier===tier).length, us=all.filter(c=>c.tier===tier&&c.used).length;
+    const pct=tot?Math.round((us/tot)*100):0;
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span class="tier-badge tier-${tier}">${tier}</span>
+        <span style="font-size:10px;color:var(--dim)">${us}/${tot} used</span>
+      </div>
+      <div style="height:3px;background:var(--border)">
+        <div style="height:100%;width:${pct}%;background:${tier==='PRO'?'var(--green)':tier==='DESK'?'var(--cyan)':'var(--amber)'};transition:width .4s"></div>
+      </div></div>`;
+  }).join('');
+}
+
+/* ─── EXPORT ─── */
+function exportJSON(which){
+  if(!_authed) return;
+  const data=getDB(which==='codes'?SUBS_KEY:USERS_KEY);
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`charthis_${which}_${new Date().toISOString().slice(0,10)}.json`;a.click();
+}
+function exportCSV(){
+  if(!_authed) return;
+  const db=getDB(SUBS_KEY);
+  const rows=[['CODE','TIER','USED','USED_BY','CREATED_AT','NOTE']];
+  Object.entries(db).forEach(([code,v])=>rows.push([code,v.tier,v.used?'yes':'no',v.usedBy||'',v.createdAt||'',v.note||'']));
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`charthis_codes_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+
+/* ─── SETTINGS ─── */
+function changePassword(){
+  if(!_authed) return;
+  const cur=document.getElementById('pw-cur').value;
+  const nw=document.getElementById('pw-new').value;
+  const con=document.getElementById('pw-con').value;
+  const stored=localStorage.getItem(PW_KEY)||DEFAULT_PW;
+  const msg=document.getElementById('pw-msg');
+  if(cur!==stored){msg.style.color='var(--red)';msg.textContent='Current password incorrect.';return;}
+  if(nw.length<6){msg.style.color='var(--red)';msg.textContent='Min 6 characters.';return;}
+  if(nw!==con){msg.style.color='var(--red)';msg.textContent='Passwords do not match.';return;}
+  localStorage.setItem(PW_KEY,nw);
+  msg.style.color='var(--green)';msg.textContent='✓ Password updated.';
+  ['pw-cur','pw-new','pw-con'].forEach(id=>document.getElementById(id).value='');
+}
+function clearUsed(){
+  if(!_authed) return;
+  if(!confirm('Reset all "used" flags? Users stay registered.')) return;
+  const db=getDB(SUBS_KEY);
+  Object.keys(db).forEach(k=>{db[k].used=false;delete db[k].usedBy;delete db[k].usedAt;});
+  setDB(SUBS_KEY,db);toast('Used flags cleared.');
+}
+function nukeAll(){
+  if(!_authed) return;
+  if(!confirm('⚠ Delete ALL codes and users?')) return;
+  if(!confirm('FINAL WARNING — cannot be undone.')) return;
+  localStorage.removeItem(SUBS_KEY);localStorage.removeItem(USERS_KEY);
+  toast('All data wiped.');renderDashboard();
+}
+
+/* ─── TOAST ─── */
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ─── AUTO REFRESH ─── */
+function startAutoRefresh(){
+  setInterval(()=>{
+    if(!_authed) return;
+    const active=document.querySelector('.section.active')?.id;
+    if(active==='tab-dashboard') renderDashboard();
+    if(active==='tab-codes')     renderCodes();
+    if(active==='tab-users')     renderUsers();
+  },5000);
+  setInterval(()=>{
+    if(!_authed||!document.getElementById('clock')) return;
+    document.getElementById('clock').textContent=new Date().toLocaleTimeString()+' (local)';
+  },1000);
+  window.addEventListener('storage',e=>{
+    if(!_authed) return;
+    if(e.key===USERS_KEY||e.key===SUBS_KEY) renderDashboard();
+  });
+}
+
+/* ─── CHECK SESSION ON LOAD ─── */
+// If valid session exists in sessionStorage (tab still open), skip lock
+(function(){
+  const s = sessionStorage.getItem(SESSION_KEY);
+  if(s){ try{ const [ts]=atob(s).split(':'); if(Date.now()-+ts < 8*60*60*1000){ _authed=true; document.getElementById('lock').style.display='none'; buildApp(); startAutoRefresh(); return; } }catch{} }
+  // Block context menu + F12 shortcut on lock screen for extra deterrence
+  document.addEventListener('contextmenu',e=>{ if(!_authed) e.preventDefault(); });
+  document.addEventListener('keydown',e=>{ if(!_authed&&(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key))||(e.ctrlKey&&e.key==='U'))) e.preventDefault(); });
+})();
+</script>
+</body>
+</html>
